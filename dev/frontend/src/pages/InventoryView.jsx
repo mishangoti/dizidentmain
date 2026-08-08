@@ -1173,9 +1173,10 @@ export default function InventoryView() {
             </div>
 
             <div
+              className="responsive-form-grid"
               style={{
                 display: "grid",
-                gridTemplateColumns: "2fr 1fr 1fr 1fr",
+                gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
                 gap: "10px",
                 alignItems: "end",
                 marginBottom: "12px",
@@ -1298,9 +1299,10 @@ export default function InventoryView() {
               <h4 style={{ marginTop: 0, fontSize: "0.95rem" }}>Use Treatment Template</h4>
 
               <div
+                className="responsive-form-grid"
                 style={{
                   display: "grid",
-                  gridTemplateColumns: "2fr 1fr 1fr",
+                  gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
                   gap: "10px",
                   alignItems: "end",
                   marginBottom: "10px",

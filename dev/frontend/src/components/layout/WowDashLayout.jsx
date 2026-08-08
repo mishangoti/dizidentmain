@@ -27,6 +27,22 @@ export default function WowDashLayout({
   }, [isMobileOpen]);
 
   useEffect(() => {
+    const DESKTOP_BP = 1200;
+    const syncShellForViewport = () => {
+      const isDesktop = window.innerWidth >= DESKTOP_BP;
+      if (isDesktop) {
+        setIsMobileOpen(false);
+      } else {
+        setIsCompact(false);
+      }
+    };
+
+    syncShellForViewport();
+    window.addEventListener("resize", syncShellForViewport);
+    return () => window.removeEventListener("resize", syncShellForViewport);
+  }, []);
+
+  useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
     try {
       localStorage.setItem("theme", theme);
@@ -145,7 +161,7 @@ export default function WowDashLayout({
                 </button>
                 <button
                   type="button"
-                  className="sidebar-mobile-toggle d-lg-none"
+                  className="sidebar-mobile-toggle d-xl-none"
                   onClick={() => setIsMobileOpen(true)}
                   aria-label="Open sidebar"
                 >
