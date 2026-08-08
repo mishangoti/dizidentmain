@@ -15,11 +15,14 @@
 .dashboard-wrapper {
   min-width: 0;
   width: 100%;
+  overflow-x: clip;
 }
 
+/* width must stay auto so sidebar margin does not push content past the viewport */
 .dashboard-main {
   min-width: 0;
-  width: 100%;
+  width: auto;
+  box-sizing: border-box;
 }
 
 .dashboard-main-body {
@@ -30,6 +33,10 @@
 
 .dashboard-main-body .card {
   min-width: 0;
+}
+
+.dashboard-main-body .container-fluid {
+  max-width: 100%;
 }
 
 .sidebar-backdrop {
