@@ -900,10 +900,10 @@ function PatientSchedule({
                 </button>
               </div>
               <div
-                className="p-2 rounded-3 border bg-white"
+                className="p-2 rounded-3 border bg-white patient-appt-calendar"
                 style={{
                   display: "grid",
-                  gridTemplateColumns: "repeat(7, 1fr)",
+                  gridTemplateColumns: "repeat(7, minmax(0, 1fr))",
                   gap: 6,
                   fontSize: "0.85rem",
                 }}
@@ -919,7 +919,7 @@ function PatientSchedule({
                 {calendarCells.map((d, idx) => (
                   <div
                     key={idx}
-                    className="d-flex align-items-center justify-content-center rounded-2"
+                    className="d-flex align-items-center justify-content-center rounded-2 patient-appt-calendar__cell"
                     style={{
                       height: 40,
                       background: d && apptDays.has(d) ? "rgba(59,130,246,0.12)" : "#fff",

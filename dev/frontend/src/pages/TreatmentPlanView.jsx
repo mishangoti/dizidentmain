@@ -1505,9 +1505,10 @@ export default function TreatmentPlanView() {
               >
               </h4>
               <div
+                className="responsive-form-grid"
                 style={{
                   display: "grid",
-                  gridTemplateColumns: "2fr 1fr 1fr auto",
+                  gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
                   gap: "10px",
                   alignItems: "end",
                 }}

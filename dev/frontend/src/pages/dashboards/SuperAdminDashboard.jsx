@@ -66,7 +66,7 @@ function SuperAdminOverview() {
         <div className="text-secondary">Loading metrics...</div>
       ) : (
         <div className="row gy-4">
-          <div className="col-md-4">
+          <div className="col-12 col-sm-6 col-xl-4">
             <div className="card p-3 shadow-2 radius-8 h-100">
               <div className="d-flex align-items-center justify-content-between gap-2">
                 <div>
@@ -79,7 +79,7 @@ function SuperAdminOverview() {
               </div>
             </div>
           </div>
-          <div className="col-md-4">
+          <div className="col-12 col-sm-6 col-xl-4">
             <div className="card p-3 shadow-2 radius-8 h-100">
               <div className="d-flex align-items-center justify-content-between gap-2">
                 <div>
@@ -92,7 +92,7 @@ function SuperAdminOverview() {
               </div>
             </div>
           </div>
-          <div className="col-md-4">
+          <div className="col-12 col-sm-6 col-xl-4">
             <div className="card p-3 shadow-2 radius-8 h-100">
               <div className="d-flex align-items-center justify-content-between gap-2">
                 <div>

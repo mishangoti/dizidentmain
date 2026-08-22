@@ -403,6 +403,17 @@
   box-shadow: none;
 }
 
+@media (max-width: 767.98px) {
+  .wowdash-users .wow-modal-form {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .wowdash-users .wow-modal-form .colspan,
+  .wowdash-users .wow-modal-actions {
+    grid-column: span 1;
+  }
+}
+
 .wowdash-users .wow-modal-form .colspan {
   grid-column: span 2;
 }

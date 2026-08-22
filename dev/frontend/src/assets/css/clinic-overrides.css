@@ -12,9 +12,52 @@
   --inner-shadow: 0 8px 18px rgba(15, 23, 42, 0.08);
 }
 
+.dashboard-wrapper {
+  min-width: 0;
+  width: 100%;
+  overflow-x: clip;
+}
+
+/* width must stay auto so sidebar margin does not push content past the viewport */
+.dashboard-main {
+  min-width: 0;
+  width: auto;
+  box-sizing: border-box;
+}
+
 .dashboard-main-body {
   min-height: calc(100vh - 84px);
   font-size: 0.9rem;
+  min-width: 0;
+}
+
+.dashboard-main-body .card {
+  min-width: 0;
+}
+
+.dashboard-main-body .container-fluid {
+  max-width: 100%;
+}
+
+.sidebar-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  z-index: 2;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+
+.sidebar-backdrop.show {
+  display: block;
+}
+
+@media (min-width: 1200px) {
+  .sidebar-backdrop {
+    display: none !important;
+  }
 }
 
 .dashboard-main-body h1,
@@ -1300,12 +1343,32 @@ h6 {
   white-space: pre-wrap;
 }
 
+.navbar-header .row {
+  --bs-gutter-x: 0.75rem;
+}
+
+.navbar-header .col-auto {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.navbar-header .d-flex.flex-wrap {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.navbar-header-below {
+  margin-top: 0.5rem;
+  min-width: 0;
+}
+
 .header-patient-selector {
   display: flex;
   align-items: center;
   gap: 8px;
   flex-wrap: wrap;
   min-width: 0;
+  max-width: 100%;
 }
 
 .header-patient-label {
@@ -1316,34 +1379,85 @@ h6 {
 }
 
 .header-patient-select {
-  width: clamp(180px, 24vw, 260px);
+  width: clamp(140px, 24vw, 260px);
+  max-width: 100%;
+  min-width: 0;
 }
 
-@media (min-width: 768px) {
-  .sidebar {
-    display: block !important;
-    inset-inline-start: 0 !important;
-    transform: translateX(0) !important;
+@media (max-width: 991.98px) {
+  .navbar-header {
+    height: auto;
+    min-height: 4.5rem;
+    padding: 0.75rem 1rem;
   }
 
+  .navbar-header .welcome-text,
+  .navbar-header .user-name,
+  .navbar-header .text-secondary-light {
+    max-width: 9rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .header-patient-label {
+    display: none;
+  }
+
+  .header-patient-select {
+    width: min(100%, 11rem);
+  }
+}
+
+.patient-appt-calendar {
+  min-width: 0;
+}
+
+@media (max-width: 767.98px) {
+  .patient-appt-calendar {
+    gap: 3px !important;
+    font-size: 0.72rem !important;
+    padding: 0.35rem !important;
+  }
+
+  .patient-appt-calendar__cell {
+    height: 30px !important;
+  }
+}
+
+.dashboard-main-body .table-wrap,
+.dashboard-main-body .table-responsive {
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.responsive-form-grid > div {
+  min-width: 0;
+}
+
+/* Shell docks at 1200px to match WowDash theme — do not force-open earlier. */
+@media (min-width: 1200px) {
   .dashboard-main {
-    margin-inline-start: 13.75rem !important;
+    margin-inline-start: 13.75rem;
   }
 
   .dashboard-main.active {
-    margin-inline-start: 5.375rem !important;
+    margin-inline-start: 5.375rem;
   }
 }
 
 @media (min-width: 1400px) {
-  .dashboard-main {
-    margin-inline-start: 17.1875rem !important;
+  .dashboard-main:not(.active) {
+    margin-inline-start: 17.1875rem;
   }
 }
 
 @media (min-width: 1650px) {
-  .dashboard-main {
-    margin-inline-start: 19.5rem !important;
+  .dashboard-main:not(.active) {
+    margin-inline-start: 19.5rem;
   }
 }
 
@@ -1785,13 +1899,19 @@ h6 {
   white-space: normal;
 }
 
-/* Odontogram: force single-row controls */
+/* Odontogram: wrap controls on narrow viewports */
 .odo-mode-row {
   display: flex !important;
-  flex-wrap: nowrap !important;
+  flex-wrap: wrap !important;
   align-items: center;
   gap: 12px;
   margin-top: 10px;
+}
+
+@media (min-width: 992px) {
+  .odo-mode-row {
+    flex-wrap: nowrap !important;
+  }
 }
 
 .odo-mode-row .odo-radio {

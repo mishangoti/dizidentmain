@@ -205,6 +205,18 @@
   background: #f3f4f6;
 }
 
+.appointment-chat .chat-sidebar {
+  display: flex;
+  flex-direction: column;
+  width: 38%;
+  min-width: 0;
+  max-width: 420px;
+  overflow: hidden;
+  background: white;
+  border-radius: 12px;
+  min-height: 0;
+}
+
 .appointment-chat .chat-wrapper {
   display: flex;
   flex: 1;
@@ -213,15 +225,23 @@
   min-height: 0;
 }
 
-.appointment-chat .chat-sidebar {
-  display: flex;
-  flex-direction: column;
-  width: 38%;
-  min-width: 300px;
-  overflow: hidden;
-  background: white;
-  border-radius: 12px;
-  min-height: 0;
+@media (max-width: 991.98px) {
+  .appointment-chat .chat-wrapper {
+    flex-direction: column;
+    overflow: auto;
+  }
+
+  .appointment-chat .chat-sidebar {
+    width: 100%;
+    max-width: none;
+    min-width: 0;
+    max-height: 42vh;
+    flex-shrink: 0;
+  }
+
+  .appointment-chat .chat-main {
+    min-height: 50vh;
+  }
 }
 
 .appointment-chat .chat-sidebar .top-profile {
