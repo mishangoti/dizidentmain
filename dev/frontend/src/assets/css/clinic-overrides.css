@@ -1392,6 +1392,45 @@ h6 {
   line-height: 1.3;
 }
 
+.backend-offline-banner {
+  position: sticky;
+  top: 0;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  padding: 0.75rem 1.25rem;
+  background: var(--warning-surface, #fff9e2);
+  color: var(--neutral-800, #1f2937);
+  border-bottom: 1px solid var(--warning-border, #ffeba6);
+  font-size: 0.9rem;
+  font-weight: 500;
+  text-align: center;
+}
+
+.backend-offline-banner i {
+  color: var(--warning-main, #ff9f29);
+  font-size: 1.15rem;
+}
+
+.backend-offline-banner__retry {
+  border: 1px solid var(--warning-main, #ff9f29);
+  background: #fff;
+  color: var(--neutral-800, #1f2937);
+  border-radius: 0.75rem;
+  padding: 0.25rem 0.75rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.backend-offline-banner__retry:disabled {
+  opacity: 0.7;
+  cursor: wait;
+}
+
 .app-toast__close {
   border: none;
   background: transparent;

@@ -1,5 +1,7 @@
 import axios from "axios";
 import { API_BASE_URL } from "../config";
+import { getAccessToken } from "../auth/tokenStore";
+import { isNetworkError, setBackendOffline } from "./backendStatus";
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -10,7 +12,12 @@ api.interceptors.request.use(
   (config) => {
     if (typeof window !== "undefined") {
       window.dispatchEvent(new CustomEvent("app-loading", { detail: 1 }));
-      
+
+      const token = getAccessToken();
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+
       const saved = localStorage.getItem("hms_user");
       if (saved) {
         try {
@@ -21,7 +28,7 @@ api.interceptors.request.use(
               config.headers["X-Active-Org-Id"] = activeOrgId;
             }
           }
-        } catch (e) {
+        } catch {
           // Ignore
         }
       }
@@ -41,11 +48,15 @@ api.interceptors.response.use(
     if (typeof window !== "undefined") {
       window.dispatchEvent(new CustomEvent("app-loading", { detail: -1 }));
     }
+    setBackendOffline(false);
     return response;
   },
   (error) => {
     if (typeof window !== "undefined") {
       window.dispatchEvent(new CustomEvent("app-loading", { detail: -1 }));
+    }
+    if (isNetworkError(error)) {
+      setBackendOffline(true);
     }
     return Promise.reject(error);
   }

@@ -1,24 +1,31 @@
 // src/App.jsx
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   BrowserRouter as Router,
   Routes,
   Route,
   Navigate,
 } from "react-router-dom";
+import { UserManager } from "oidc-client-ts";
 
 import LoginPage from "./pages/LoginPage";
+import AuthCallback from "./pages/AuthCallback";
 import Dashboard from "./pages/dashboards/Dashboard";
 import DoctorDashboard from "./pages/dashboards/DoctorDashboard";
 import PatientDashboard from "./pages/dashboards/PatientDashboard";
 import SuperAdminDashboard from "./pages/dashboards/SuperAdminDashboard";
+import ServiceProviderDashboard from "./pages/dashboards/ServiceProviderDashboard";
 import { ToastProvider } from "./components/common/ToastProvider";
 import GlobalLoader from "./components/common/GlobalLoader";
+import BackendOfflineBanner from "./components/common/BackendOfflineBanner";
+import { AUTHENTIK_ENABLED, oidcSettings } from "./auth/authFlags";
+import OidcSessionBridge from "./auth/OidcSessionBridge";
+import { clearAccessToken } from "./auth/tokenStore";
+import { isHmsApiUrl, setBackendOffline } from "./api/backendStatus";
 
 export default function App() {
   const [user, setUser] = useState(null);
 
-  // OPTIONAL: restore from localStorage if you want persistence on refresh
   useEffect(() => {
     const saved = localStorage.getItem("hms_user");
     if (saved) {
@@ -40,127 +47,154 @@ export default function App() {
     if (window.__fetchPatched) return;
     window.__fetchPatched = true;
     const originalFetch = window.fetch.bind(window);
+    window.__nativeFetch = originalFetch;
     window.fetch = (...args) => {
+      const hms = isHmsApiUrl(args[0]);
       window.dispatchEvent(new CustomEvent("app-loading", { detail: 1 }));
-      return originalFetch(...args).finally(() => {
-        window.dispatchEvent(new CustomEvent("app-loading", { detail: -1 }));
-      });
+      return originalFetch(...args)
+        .then((res) => {
+          if (hms) setBackendOffline(false);
+          return res;
+        })
+        .catch((err) => {
+          if (hms) setBackendOffline(true);
+          throw err;
+        })
+        .finally(() => {
+          window.dispatchEvent(new CustomEvent("app-loading", { detail: -1 }));
+        });
     };
   }, []);
 
-  const handleLogin = (userObj) => {
-    // Normalize so we always have user.id = backend users.id
+  const handleLogin = useCallback((userObj) => {
     const normalized = {
       ...userObj,
       id: userObj.id ?? userObj.userId ?? null,
     };
-
     setUser(normalized);
     localStorage.setItem("hms_user", JSON.stringify(normalized));
-  };
-  const handleLogout = () => {
-    // Clear user state
-    setUser(null);
+  }, []);
 
-    // Clear localStorage
+  const handleLogout = useCallback(async () => {
+    const authSource = user?.authSource;
+    setUser(null);
+    clearAccessToken();
     localStorage.clear();
 
-    // Clear all cookies
     document.cookie.split(";").forEach((c) => {
       const eqPos = c.indexOf("=");
       const name = eqPos > -1 ? c.substr(0, eqPos).trim() : c.trim();
       if (name) {
-        // Set expiry to past date to delete the cookie
         document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;`;
       }
     });
 
-    // Call Spring Boot logout endpoint if available
-    // await fetch(`${API_BASE_URL}/auth/logout`, { method: 'POST' });
-  };
+    if (AUTHENTIK_ENABLED && authSource === "authentik") {
+      try {
+        const um = new UserManager(oidcSettings);
+        await um.signoutRedirect();
+        return;
+      } catch (e) {
+        console.error("Authentik signout failed", e);
+      }
+    }
+  }, [user]);
 
-  // Helper to send logged-in user to correct dashboard
   const getDefaultRouteForUser = () => {
     if (!user) return "/login";
     if (user.role === "SUPERADMIN") return "/super-admin/overview";
     if (user.role === "ORG") return "/org/overview";
     if (user.role === "DOCTOR") return "/doctor/overview";
+    if (user.role === "SERVICE_PROVIDER") return "/service-provider/overview";
     if (user.role === "PATIENT") return "/patient/overview";
     return "/login";
   };
 
   return (
     <ToastProvider>
+      <BackendOfflineBanner />
       <GlobalLoader />
+      {AUTHENTIK_ENABLED && <OidcSessionBridge />}
       <Router>
         <Routes>
-          {/* Default route */}
           <Route
             path="/"
             element={<Navigate to={getDefaultRouteForUser()} replace />}
           />
 
-        {/* Login */}
-        <Route
-          path="/login"
-          element={
-            user ? (
-              <Navigate to={getDefaultRouteForUser()} replace />
-            ) : (
-              <LoginPage onLogin={handleLogin} />
-            )
-          }
-        />
+          {AUTHENTIK_ENABLED && (
+            <Route
+              path="/auth/callback"
+              element={<AuthCallback onLogin={handleLogin} />}
+            />
+          )}
 
-        {/* Super Admin dashboard */}
-        <Route
-          path="/super-admin/*"
-          element={
-            user?.role === "SUPERADMIN" ? (
-              <SuperAdminDashboard user={user} onLogout={handleLogout} />
-            ) : (
-              <Navigate to="/login" replace />
-            )
-          }
-        />
+          <Route
+            path="/login"
+            element={
+              user ? (
+                <Navigate to={getDefaultRouteForUser()} replace />
+              ) : (
+                <LoginPage onLogin={handleLogin} />
+              )
+            }
+          />
 
-        {/* Org dashboard */}
-        <Route
-          path="/org/*"
-          element={
-            user?.role === "ORG" ? (
-              <Dashboard user={user} onLogout={handleLogout} />
-            ) : (
-              <Navigate to="/login" replace />
-            )
-          }
-        />
+          <Route
+            path="/super-admin/*"
+            element={
+              user?.role === "SUPERADMIN" ? (
+                <SuperAdminDashboard user={user} onLogout={handleLogout} />
+              ) : (
+                <Navigate to="/login" replace />
+              )
+            }
+          />
 
-        {/* Doctor dashboard */}
-        <Route
-          path="/doctor/*"
-          element={
-            user?.role === "DOCTOR" ? (
-              <DoctorDashboard user={user} onLogout={handleLogout} />
-            ) : (
-              <Navigate to="/login" replace />
-            )
-          }
-        />
+          <Route
+            path="/org/*"
+            element={
+              user?.role === "ORG" ? (
+                <Dashboard user={user} onLogout={handleLogout} />
+              ) : (
+                <Navigate to="/login" replace />
+              )
+            }
+          />
 
-        {/* Patient dashboard */}
-        <Route
-          path="/patient/*"
-          element={
-            user?.role === "PATIENT" ? (
-              <PatientDashboard user={user} onLogout={handleLogout} />
-            ) : (
-              <Navigate to="/login" replace />
-            )
-          }
-        />
+          <Route
+            path="/doctor/*"
+            element={
+              user?.role === "DOCTOR" ? (
+                <DoctorDashboard user={user} onLogout={handleLogout} />
+              ) : (
+                <Navigate to="/login" replace />
+              )
+            }
+          />
 
-        {/* Fallback */}
+          <Route
+            path="/service-provider/*"
+            element={
+              user?.role === "SERVICE_PROVIDER" ? (
+                <ServiceProviderDashboard user={user} onLogout={handleLogout} />
+              ) : (
+                <Navigate to="/login" replace />
+              )
+            }
+          />
+
+          <Route
+            path="/patient/*"
+            element={
+              user?.role === "PATIENT" ? (
+                <PatientDashboard user={user} onLogout={handleLogout} />
+              ) : (
+                <Navigate to="/login" replace />
+              )
+            }
+          />
+
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Router>

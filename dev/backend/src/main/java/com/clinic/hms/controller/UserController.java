@@ -1,15 +1,16 @@
 package com.clinic.hms.controller;
 
+import com.clinic.hms.dto.request.UserProfileUpdateRequest;
+import com.clinic.hms.dto.response.UserProfileResponse;
 import com.clinic.hms.dto.response.UserSummaryResponse;
 import com.clinic.hms.entity.User;
 import com.clinic.hms.entity.UserDetails;
 import com.clinic.hms.repository.UserDetailsRepository;
 import com.clinic.hms.repository.UserRepository;
+import com.clinic.hms.service.UserProfileService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -20,6 +21,7 @@ public class UserController {
 
     private final UserRepository userRepository;
     private final UserDetailsRepository userDetailsRepository;
+    private final UserProfileService userProfileService;
 
     @GetMapping
     public List<UserSummaryResponse> list(@RequestParam(value = "role", required = false) String role) {
@@ -37,9 +39,24 @@ public class UserController {
                             .id(user.getId())
                             .name(name)
                             .mobile(user.getMobile())
+                            .email(user.getEmail())
                             .role(user.getRole())
+                            .authentikUserId(user.getAuthentikUserId())
                             .build();
                 })
                 .toList();
+    }
+
+    @GetMapping("/{id}/profile")
+    public ResponseEntity<UserProfileResponse> getProfile(@PathVariable("id") Long id) {
+        return ResponseEntity.ok(userProfileService.getProfile(id));
+    }
+
+    @PutMapping("/{id}/profile")
+    public ResponseEntity<UserProfileResponse> updateProfile(
+            @PathVariable("id") Long id,
+            @RequestBody UserProfileUpdateRequest req
+    ) {
+        return ResponseEntity.ok(userProfileService.updateProfile(id, req));
     }
 }

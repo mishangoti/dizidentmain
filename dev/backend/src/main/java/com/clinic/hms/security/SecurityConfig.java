@@ -1,6 +1,11 @@
 package com.clinic.hms.security;
 
+import com.clinic.hms.config.AuthProperties;
+import com.clinic.hms.config.AuthentikProperties;
+import com.clinic.hms.config.CorsAppProperties;
+import com.clinic.hms.security.authentik.AuthentikJwtAuthenticationConverter;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -10,6 +15,7 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.password.NoOpPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
@@ -22,29 +28,57 @@ import java.util.List;
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-    private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final ObjectProvider<JwtAuthenticationFilter> jwtAuthenticationFilter;
+    private final ObjectProvider<JwtDecoder> jwtDecoder;
+    private final ObjectProvider<AuthentikJwtAuthenticationConverter> authentikJwtConverter;
+    private final AuthentikProperties authentikProperties;
+    private final AuthProperties authProperties;
+    private final CorsAppProperties corsAppProperties;
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        boolean authentik = authentikProperties.isEnabled();
+        boolean legacy = authProperties.isLegacyEnabled();
+        boolean requireAuth = authentik || legacy;
+
         http
                 .csrf(csrf -> csrf.disable())
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authorizeHttpRequests(auth -> auth
-                        // TEMP: allow everything under /api/**
-                        .requestMatchers("/api/**").permitAll()
-                        // swagger & health (also open)
-                        .requestMatchers(
-                                "/swagger-ui/**",
-                                "/swagger-ui.html",
-                                "/v3/api-docs/**",
-                                "/api-docs/**",
-                                "/actuator/health"
-                        ).permitAll()
-                        // anything else
-                        .anyRequest().permitAll()
-                )
-                // you can KEEP the JWT filter, it just won't be required for access
-                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+                .authorizeHttpRequests(auth -> {
+                    auth.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll();
+                    auth.requestMatchers(
+                            "/swagger-ui/**",
+                            "/swagger-ui.html",
+                            "/v3/api-docs/**",
+                            "/api-docs/**",
+                            "/actuator/health",
+                            "/actuator/health/**"
+                    ).permitAll();
+                    if (legacy) {
+                        auth.requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll();
+                    }
+                    if (requireAuth) {
+                        auth.requestMatchers("/api/**").authenticated();
+                        auth.anyRequest().permitAll();
+                    } else {
+                        auth.anyRequest().permitAll();
+                    }
+                });
+
+        if (authentik) {
+            JwtDecoder decoder = jwtDecoder.getObject();
+            AuthentikJwtAuthenticationConverter converter = authentikJwtConverter.getObject();
+            http.oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt -> jwt
+                    .decoder(decoder)
+                    .jwtAuthenticationConverter(converter)
+            ));
+        }
+
+        JwtAuthenticationFilter legacyFilter = jwtAuthenticationFilter.getIfAvailable();
+        if (legacyFilter != null) {
+            http.addFilterBefore(legacyFilter, UsernamePasswordAuthenticationFilter.class);
+        }
 
         return http.build();
     }
@@ -54,7 +88,6 @@ public class SecurityConfig {
         return cfg.getAuthenticationManager();
     }
 
-    // plain text encoder for now; later -> BCryptPasswordEncoder
     @Bean
     public PasswordEncoder passwordEncoder() {
         return NoOpPasswordEncoder.getInstance();
@@ -63,14 +96,15 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-     /*   config.setAllowedOriginPatterns(List.of(
-                "http://localhost:5173",
-                "http://127.0.0.1:5173",
-        ));*/
-        config.setAllowedOriginPatterns(List.of("*")); // allow all origins (mobile/LAN/localhost)
-        config.setAllowedMethods(List.of("*"));
+        List<String> origins = corsAppProperties.getAllowedOrigins();
+        if (origins == null || origins.isEmpty()) {
+            config.setAllowedOriginPatterns(List.of("*"));
+        } else {
+            config.setAllowedOrigins(origins);
+        }
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
-        config.setAllowCredentials(true);   // required for cookie-based JWT
+        config.setAllowCredentials(true);
         config.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();

@@ -10,5 +10,7 @@ public class UserSummaryResponse {
     private Long id;
     private String name;
     private String mobile;
+    private String email;
     private String role;
+    private String authentikUserId;
 }

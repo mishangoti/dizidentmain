@@ -18,7 +18,6 @@ public class UserDetails {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // FK to users.id
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false, unique = true)
     private User user;
@@ -27,6 +26,7 @@ public class UserDetails {
     private String fullName;
 
     private LocalDate dob;
+
     @Column(name = "age_years")
     private Integer ageYears;
 
@@ -55,9 +55,37 @@ public class UserDetails {
     private String pastReportsFilePath;
 
     @Column(length = 150)
-    private String speciality; // for doctors
+    private String speciality;
 
-    // primary doctor for patient (optional)
+    @Column(name = "license_number", length = 64)
+    private String licenseNumber;
+
+    @Column(name = "address_line", length = 255)
+    private String addressLine;
+
+    @Column(length = 100)
+    private String state;
+
+    @Column(name = "postal_code", length = 20)
+    private String postalCode;
+
+    @Column(length = 100)
+    private String country;
+
+    /** SERVICE_PROVIDER type code */
+    @Column(name = "provider_type", length = 64)
+    private String providerType;
+
+    /** INDEPENDENT / INTERNAL */
+    @Column(name = "provider_scope", length = 32)
+    private String providerScope;
+
+    @Column(name = "business_name", length = 150)
+    private String businessName;
+
+    @Column(name = "contact_phone", length = 20)
+    private String contactPhone;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "assigned_doctor_id")
     private User assignedDoctor;

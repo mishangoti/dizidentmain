@@ -1,0 +1,6 @@
+﻿.env
+data/
+certs/
+custom-templates/
+hms-oidc-config.generated.json
+*.generated.json

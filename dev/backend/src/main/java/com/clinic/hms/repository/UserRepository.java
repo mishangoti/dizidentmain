@@ -11,7 +11,11 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     boolean existsByMobile(String mobile);
 
-    List<User> findByRole(String role);   // ⬅ we'll use this for doctors
+    List<User> findByRole(String role);
 
+    Optional<User> findByAuthentikUserId(String authentikUserId);
 
+    Optional<User> findByEmail(String email);
+
+    Optional<User> findFirstByEmailIgnoreCase(String email);
 }
